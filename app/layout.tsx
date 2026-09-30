@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant, Great_Vibes, Montserrat } from "next/font/google";
-import { CartProvider } from "@/lib/cart";
+import { AppProviders } from "@/components/providers";
 import { SiteHeader } from "@/components/site-header";
 import { SiteFooter } from "@/components/site-footer";
 import { CartDrawer } from "@/components/cart-drawer";
@@ -42,13 +42,13 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${montserrat.variable} ${cormorant.variable} ${script.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-navy">
-        <CartProvider>
+        <AppProviders>
           <SiteHeader />
           <main className="flex-1">{children}</main>
           <SiteFooter />
           <CartDrawer />
           <BackToTop />
-        </CartProvider>
+        </AppProviders>
       </body>
     </html>
   );

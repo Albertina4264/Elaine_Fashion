@@ -21,6 +21,14 @@ Ouvrir [http://localhost:3000](http://localhost:3000).
 
 Copier `.env.example` vers `.env.local` et renseigner les clés Supabase.
 
+### Compte admin (local)
+
+- URL : `/admin`
+- E-mail : `admin@elaine-fashion.com`
+- Mot de passe : `ElaineFashion2026`
+
+Les messages du formulaire contact sont stockés localement et visibles dans `/admin` → Messages clients.
+
 ## Scripts
 
 - `npm run dev` — serveur local

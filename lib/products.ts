@@ -1,4 +1,13 @@
+import type { Locale } from "@/lib/i18n/locale";
+import type { MessageKey } from "@/lib/i18n/messages";
+
 export type Category = "Vêtements" | "Chaussures" | "Accessoires" | "Sacs";
+
+export type ProductColor = { name: string; hex: string; image?: string };
+
+export type ProductTranslations = Partial<
+  Record<Exclude<Locale, "fr">, { name: string; description: string }>
+>;
 
 export type Product = {
   slug: string;
@@ -9,17 +18,39 @@ export type Product = {
   compareAt?: number;
   promoPercent?: number;
   images: string[];
-  colors: { name: string; hex: string; image?: string }[];
+  primaryImageIndex?: number;
+  colors: ProductColor[];
+  stock: number;
+  translations?: ProductTranslations;
   popular?: boolean;
   featured?: boolean;
 };
 
+export const PAYMENT_METHOD_IDS = ["orange", "wave", "card", "cod"] as const;
+export type PaymentMethodId = (typeof PAYMENT_METHOD_IDS)[number];
+
+export const PAYMENT_METHOD_LABEL_KEYS: Record<PaymentMethodId, MessageKey> = {
+  orange: "paymentOrange",
+  wave: "paymentWave",
+  card: "paymentCard",
+  cod: "paymentCod",
+};
+
+/** @deprecated use PAYMENT_METHOD_IDS + i18n labels */
 export const PAYMENT_METHODS = [
   "Orange Money",
   "Wave",
   "Carte bancaire",
   "Paiement à la livraison",
 ] as const;
+
+export function normalizeStock(value: unknown): number {
+  const n = Math.floor(Number(value));
+  if (!Number.isFinite(n) || n < 0) return 0;
+  return n;
+}
+
+const DEFAULT_STOCK = 15;
 
 export const products: Product[] = [
   {
@@ -43,6 +74,7 @@ export const products: Product[] = [
       { name: "Beige", hex: "#E8D5C4", image: "/products/photo-01.png" },
       { name: "Rouge", hex: "#C81E1E", image: "/products/photo-02.png" },
     ],
+    stock: DEFAULT_STOCK,
     popular: true,
     featured: true,
   },
@@ -65,6 +97,7 @@ export const products: Product[] = [
       { name: "Chocolat", hex: "#4A2C2A", image: "/products/photo-07.png" },
       { name: "Ivoire", hex: "#E8DCC8", image: "/products/photo-09.png" },
     ],
+    stock: DEFAULT_STOCK,
     popular: true,
     featured: true,
   },
@@ -82,6 +115,7 @@ export const products: Product[] = [
       { name: "Noir", hex: "#111111", image: "/products/photo-11.png" },
       { name: "Rose", hex: "#E11D8A", image: "/products/photo-12.png" },
     ],
+    stock: DEFAULT_STOCK,
     featured: true,
   },
   {
@@ -103,6 +137,7 @@ export const products: Product[] = [
       { name: "Bordeaux", hex: "#7F1D1D", image: "/products/photo-14.png" },
       { name: "Bleu", hex: "#93C5FD", image: "/products/photo-16.png" },
     ],
+    stock: DEFAULT_STOCK,
     popular: true,
   },
   {
@@ -119,6 +154,7 @@ export const products: Product[] = [
       { name: "Or rose", hex: "#E8C4B8", image: "/products/photo-17.png" },
       { name: "Argent", hex: "#C0C0C0", image: "/products/photo-22.png" },
     ],
+    stock: DEFAULT_STOCK,
     popular: true,
   },
   {
@@ -135,8 +171,31 @@ export const products: Product[] = [
       { name: "Chocolat", hex: "#5C4033", image: "/products/photo-19.png" },
       { name: "Ivoire", hex: "#F5F0EB", image: "/products/photo-21.png" },
     ],
+    stock: DEFAULT_STOCK,
   },
 ];
+
+export function normalizeProduct(raw: Product): Product {
+  const stock = normalizeStock(raw.stock);
+  const images = raw.images?.length ? raw.images : ["/products/photo-01.png"];
+  const primaryImageIndex = Math.min(
+    Math.max(0, raw.primaryImageIndex ?? 0),
+    images.length - 1,
+  );
+  return {
+    ...raw,
+    stock,
+    images,
+    primaryImageIndex,
+    colors: raw.colors?.length
+      ? raw.colors
+      : [{ name: "Unique", hex: "#1C1917", image: images[primaryImageIndex] }],
+  };
+}
+
+export function totalCatalogStock(products: Product[]): number {
+  return products.reduce((sum, p) => sum + normalizeStock(p.stock), 0);
+}
 
 export function formatCfa(amount: number) {
   return `CFA ${amount.toLocaleString("fr-FR")}`;

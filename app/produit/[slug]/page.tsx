@@ -1,6 +1,5 @@
-import { notFound } from "next/navigation";
-import { ProductDetail } from "@/components/product-detail";
-import { getProduct, products } from "@/lib/products";
+import { ProductDetailLoader } from "@/components/product-detail-loader";
+import { products } from "@/lib/products";
 
 export function generateStaticParams() {
   return products.map((product) => ({ slug: product.slug }));
@@ -8,13 +7,11 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: PageProps<"/produit/[slug]">) {
   const { slug } = await params;
-  const product = getProduct(slug);
+  const product = products.find((item) => item.slug === slug);
   return { title: product?.name ?? "Produit" };
 }
 
 export default async function ProductPage({ params }: PageProps<"/produit/[slug]">) {
   const { slug } = await params;
-  const product = getProduct(slug);
-  if (!product) notFound();
-  return <ProductDetail product={product} />;
+  return <ProductDetailLoader slug={slug} />;
 }

@@ -1,15 +1,19 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useI18n } from "@/lib/i18n";
 
 export function ShopToolbar({ count }: { count: number }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t } = useI18n();
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted">
-      <p>{count} résultats affichés</p>
+      <p>
+        {count} {t("results")}
+      </p>
       <label className="flex items-center gap-2">
         <span className="sr-only">Trier</span>
         <select
@@ -23,9 +27,9 @@ export function ShopToolbar({ count }: { count: number }) {
             router.push(query ? `${pathname}?${query}` : pathname);
           }}
         >
-          <option value="defaut">Tri par défaut</option>
-          <option value="prix-asc">Prix croissant</option>
-          <option value="prix-desc">Prix décroissant</option>
+          <option value="defaut">{t("sortDefault")}</option>
+          <option value="prix-asc">{t("sortPriceAsc")}</option>
+          <option value="prix-desc">{t("sortPriceDesc")}</option>
         </select>
       </label>
     </div>
