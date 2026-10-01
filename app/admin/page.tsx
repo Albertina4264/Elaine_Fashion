@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { KpiDashboard } from "@/components/admin/kpi-dashboard";
 import { ProductEditor } from "@/components/admin/product-editor";
+import { useRecaptcha } from "@/components/recaptcha-provider";
 import { useAdminSession, ADMIN_EMAIL } from "@/lib/admin-session";
 import { useCatalog } from "@/lib/catalog";
 import { useI18n } from "@/lib/i18n";
@@ -19,6 +20,7 @@ import { formatCfa, totalCatalogStock, type Product } from "@/lib/products";
 
 export default function AdminPage() {
   const { t } = useI18n();
+  const { verify } = useRecaptcha();
   const { isAdmin, login, logout } = useAdminSession();
   const { products, addProduct, updateProduct, removeProduct } = useCatalog();
   const [messages, setMessages] = useState<ContactMessage[]>([]);
@@ -27,6 +29,8 @@ export default function AdminPage() {
   const [name, setName] = useState("");
   const [price, setPrice] = useState("");
   const [loginError, setLoginError] = useState(false);
+  const [securityError, setSecurityError] = useState(false);
+  const [submittingLogin, setSubmittingLogin] = useState(false);
 
   const totalStock = useMemo(() => totalCatalogStock(products), [products]);
 
@@ -50,11 +54,28 @@ export default function AdminPage() {
         </p>
         <form
           className="mt-8 space-y-4"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault();
             const data = new FormData(event.currentTarget);
-            const ok = login(String(data.get("email")), String(data.get("password")));
-            setLoginError(!ok);
+            setSubmittingLogin(true);
+            setLoginError(false);
+            setSecurityError(false);
+
+            try {
+              const verified = await verify("admin_login");
+              if (!verified) {
+                setSecurityError(true);
+                return;
+              }
+
+              const ok = login(
+                String(data.get("email")),
+                String(data.get("password")),
+              );
+              setLoginError(!ok);
+            } finally {
+              setSubmittingLogin(false);
+            }
           }}
         >
           <label className="block text-sm">
@@ -66,8 +87,17 @@ export default function AdminPage() {
             <input required type="password" name="password" className="mt-1 w-full border px-3 py-2" />
           </label>
           {loginError ? <p className="text-sm text-red-600">{t("adminLoginError")}</p> : null}
-          <button type="submit" className="cursor-pointer rounded-full bg-gold px-8 py-3 text-sm text-white">
-            {t("adminSignIn")}
+          {securityError ? (
+            <p role="alert" className="text-sm text-red-600">
+              {t("recaptchaError")}
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            disabled={submittingLogin}
+            className="cursor-pointer rounded-full bg-gold px-8 py-3 text-sm text-white disabled:cursor-wait disabled:opacity-60"
+          >
+            {submittingLogin ? t("submitting") : t("adminSignIn")}
           </button>
         </form>
       </div>

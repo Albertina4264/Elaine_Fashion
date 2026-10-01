@@ -6,6 +6,7 @@ import { useCatalog } from "@/lib/catalog";
 import { useI18n } from "@/lib/i18n";
 import { productDisplayName } from "@/lib/product-locale";
 import { saveOrder } from "@/lib/orders";
+import { useRecaptcha } from "@/components/recaptcha-provider";
 import {
   formatCfa,
   PAYMENT_METHOD_IDS,
@@ -17,7 +18,10 @@ export default function CheckoutPage() {
   const { lines, subtotal, clear } = useCart();
   const { consumeStockLines } = useCatalog();
   const { t, locale } = useI18n();
+  const { verify } = useRecaptcha();
   const [done, setDone] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [securityError, setSecurityError] = useState(false);
 
   if (done) {
     return (
@@ -32,38 +36,56 @@ export default function CheckoutPage() {
     <div className="mx-auto grid max-w-7xl gap-10 px-4 pb-20 pt-32 md:grid-cols-[1fr_360px] md:px-8">
       <form
         className="space-y-4"
-        onSubmit={(event) => {
+        onSubmit={async (event) => {
           event.preventDefault();
           const data = new FormData(event.currentTarget);
           const email = String(data.get("email") ?? "");
           const paymentId = String(data.get("payment") ?? PAYMENT_METHOD_IDS[0]) as PaymentMethodId;
           const paymentMethod = t(PAYMENT_METHOD_LABEL_KEYS[paymentId] ?? "paymentOrange");
+          setSubmitting(true);
+          setSecurityError(false);
 
-          if (
-            !consumeStockLines(
-              lines.map(({ item }) => ({ slug: item.slug, quantity: item.quantity })),
-            )
-          ) {
-            alert(t("stockError"));
-            return;
+          try {
+            const verified = await verify("checkout");
+            if (!verified) {
+              setSecurityError(true);
+              return;
+            }
+
+            if (
+              !consumeStockLines(
+                lines.map(({ item }) => ({
+                  slug: item.slug,
+                  quantity: item.quantity,
+                })),
+              )
+            ) {
+              alert(t("stockError"));
+              return;
+            }
+
+            saveOrder({
+              email,
+              firstName: String(data.get("firstName") ?? ""),
+              lastName: String(data.get("lastName") ?? ""),
+              paymentMethod,
+              total: subtotal,
+              items: lines.map(({ product, item, lineTotal }) => ({
+                productSlug: product.slug,
+                name: productDisplayName(product, locale),
+                color: item.color,
+                quantity: item.quantity,
+                unitPrice:
+                  item.quantity > 0
+                    ? lineTotal / item.quantity
+                    : product.price,
+              })),
+            });
+            clear();
+            setDone(true);
+          } finally {
+            setSubmitting(false);
           }
-
-          saveOrder({
-            email,
-            firstName: String(data.get("firstName") ?? ""),
-            lastName: String(data.get("lastName") ?? ""),
-            paymentMethod,
-            total: subtotal,
-            items: lines.map(({ product, item, lineTotal }) => ({
-              productSlug: product.slug,
-              name: productDisplayName(product, locale),
-              color: item.color,
-              quantity: item.quantity,
-              unitPrice: item.quantity > 0 ? lineTotal / item.quantity : product.price,
-            })),
-          });
-          clear();
-          setDone(true);
         }}
       >
         <h1 className="font-serif text-4xl text-navy">{t("checkoutBilling")}</h1>
@@ -120,8 +142,17 @@ export default function CheckoutPage() {
           {t("orderNotes")}
           <textarea name="notes" rows={4} className="mt-1 w-full border px-3 py-2" />
         </label>
-        <button type="submit" className="cursor-pointer rounded-full bg-gold px-8 py-3 text-sm font-medium text-white">
-          {t("placeOrder")}
+        {securityError ? (
+          <p role="alert" className="text-sm text-red-600">
+            {t("recaptchaError")}
+          </p>
+        ) : null}
+        <button
+          type="submit"
+          disabled={submitting}
+          className="cursor-pointer rounded-full bg-gold px-8 py-3 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-60"
+        >
+          {submitting ? t("submitting") : t("placeOrder")}
         </button>
       </form>
       <aside className="h-fit border border-black/10 p-6">

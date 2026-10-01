@@ -12,6 +12,7 @@ import { productDisplayName, primaryImage } from "@/lib/product-locale";
 import { formatOrderItemLabel, getOrdersForEmail } from "@/lib/orders";
 import { formatCfa } from "@/lib/products";
 import { useWishlist } from "@/lib/wishlist";
+import { useRecaptcha } from "@/components/recaptcha-provider";
 
 type Tab = "coupons" | "orders" | "wishlist" | "history";
 
@@ -23,10 +24,13 @@ const demoCoupons = [
 export default function AccountPage() {
   const { session, login, logout } = useCustomer();
   const { t, locale } = useI18n();
+  const { verify } = useRecaptcha();
   const { slugs } = useWishlist();
   const { products, getBySlug } = useCatalog();
   const [tab, setTab] = useState<Tab>("orders");
   const [orders, setOrders] = useState<ReturnType<typeof getOrdersForEmail>>([]);
+  const [submitting, setSubmitting] = useState(false);
+  const [securityError, setSecurityError] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -51,10 +55,26 @@ export default function AccountPage() {
         <PageHero title={t("account")} image="/products/photo-23.jpg" />
         <form
           className="mx-auto max-w-md space-y-4 px-4 py-16"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault();
             const data = new FormData(event.currentTarget);
-            login(String(data.get("email")), String(data.get("name") || undefined));
+            setSubmitting(true);
+            setSecurityError(false);
+
+            try {
+              const verified = await verify("login");
+              if (!verified) {
+                setSecurityError(true);
+                return;
+              }
+
+              login(
+                String(data.get("email")),
+                String(data.get("name") || undefined),
+              );
+            } finally {
+              setSubmitting(false);
+            }
           }}
         >
           <h1 className="font-serif text-3xl text-navy">{t("login")}</h1>
@@ -71,8 +91,17 @@ export default function AccountPage() {
             {t("password")} *
             <input required type="password" name="password" className="mt-1 w-full border px-3 py-2" />
           </label>
-          <button type="submit" className="cursor-pointer rounded-full bg-gold px-8 py-3 text-sm font-medium text-white">
-            {t("login")}
+          {securityError ? (
+            <p role="alert" className="text-sm text-red-600">
+              {t("recaptchaError")}
+            </p>
+          ) : null}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="cursor-pointer rounded-full bg-gold px-8 py-3 text-sm font-medium text-white disabled:cursor-wait disabled:opacity-60"
+          >
+            {submitting ? t("submitting") : t("login")}
           </button>
         </form>
       </div>

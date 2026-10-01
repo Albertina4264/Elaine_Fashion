@@ -42,7 +42,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${montserrat.variable} ${cormorant.variable} ${script.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-white text-navy">
-        <AppProviders>
+        <AppProviders
+          recaptchaSiteKey={process.env.RECAPTCHA_SITE_KEY ?? ""}
+        >
           <SiteHeader />
           <main className="flex-1">{children}</main>
           <SiteFooter />

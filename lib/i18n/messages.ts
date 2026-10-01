@@ -152,6 +152,9 @@ export const messages = {
     categoryAccessories: "Accessoires",
     categoryBags: "Sacs",
     stockError: "Stock insuffisant pour cette quantité.",
+    recaptchaError:
+      "La vérification de sécurité a échoué. Veuillez réessayer.",
+    submitting: "Vérification…",
     adminTitle: "Administration",
     adminLoginHint: "Connexion réservée à l'administratrice",
     adminEmail: "E-mail admin",
@@ -378,6 +381,9 @@ export const messages = {
     categoryAccessories: "Acessórios",
     categoryBags: "Malas",
     stockError: "Stock insuficiente para esta quantidade.",
+    recaptchaError:
+      "A verificação de segurança falhou. Por favor, tente novamente.",
+    submitting: "A verificar…",
     adminTitle: "Administração",
     adminLoginHint: "Acesso reservado à administradora",
     adminEmail: "E-mail admin",
@@ -604,6 +610,8 @@ export const messages = {
     categoryAccessories: "Accessories",
     categoryBags: "Bags",
     stockError: "Not enough stock for this quantity.",
+    recaptchaError: "Security verification failed. Please try again.",
+    submitting: "Verifying…",
     adminTitle: "Administration",
     adminLoginHint: "Administrator login only",
     adminEmail: "Admin email",

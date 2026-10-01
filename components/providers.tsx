@@ -6,19 +6,28 @@ import { CatalogProvider } from "@/lib/catalog";
 import { CustomerProvider } from "@/lib/customer-session";
 import { I18nProvider } from "@/lib/i18n";
 import { WishlistProvider } from "@/lib/wishlist";
+import { RecaptchaProvider } from "@/components/recaptcha-provider";
 
-export function AppProviders({ children }: { children: React.ReactNode }) {
+export function AppProviders({
+  children,
+  recaptchaSiteKey,
+}: {
+  children: React.ReactNode;
+  recaptchaSiteKey: string;
+}) {
   return (
     <I18nProvider>
-      <CatalogProvider>
-        <WishlistProvider>
-          <CustomerProvider>
-            <AdminProvider>
-              <CartProvider>{children}</CartProvider>
-            </AdminProvider>
-          </CustomerProvider>
-        </WishlistProvider>
-      </CatalogProvider>
+      <RecaptchaProvider siteKey={recaptchaSiteKey}>
+        <CatalogProvider>
+          <WishlistProvider>
+            <CustomerProvider>
+              <AdminProvider>
+                <CartProvider>{children}</CartProvider>
+              </AdminProvider>
+            </CustomerProvider>
+          </WishlistProvider>
+        </CatalogProvider>
+      </RecaptchaProvider>
     </I18nProvider>
   );
 }
